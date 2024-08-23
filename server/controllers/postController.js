@@ -19,3 +19,15 @@ exports.getPosts = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
+exports.getPostById = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id).populate('author', 'username');
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    res.json(post);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
