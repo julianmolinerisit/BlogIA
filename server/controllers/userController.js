@@ -33,3 +33,17 @@ exports.login = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
+// Obtener datos del usuario autenticado
+exports.getUserData = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password'); // Excluye solo la contraseña
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    console.log('User data from DB:', user); // Asegúrate de que el usuario se está obteniendo correctamente
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
