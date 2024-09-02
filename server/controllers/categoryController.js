@@ -1,21 +1,21 @@
-const Category = require('../models/Category');
+const Category = require('../models/category');
 
 exports.getCategories = async (req, res) => {
   try {
     const categories = await Category.find();
     res.json(categories);
-  } catch (err) {
-    res.status(500).send('Error del servidor');
+  } catch (error) {
+    res.status(500).json({ message: 'Error al obtener las categorías', error });
   }
 };
 
 exports.createCategory = async (req, res) => {
-  const { name } = req.body;
   try {
-    const newCategory = new Category({ name });
-    await newCategory.save();
-    res.status(201).json(newCategory);
-  } catch (err) {
-    res.status(500).send('Error del servidor');
+    const { name } = req.body;
+    const category = new Category({ name });
+    await category.save();
+    res.status(201).json(category);
+  } catch (error) {
+    res.status(500).json({ message: 'Error al crear la categoría', error });
   }
 };
