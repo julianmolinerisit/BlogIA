@@ -49,57 +49,26 @@ exports.createDailyPost = async (req, res) => {
 };
 
 // Obtener posts con opción de filtro por categoría y ordenación
-// Obtener posts con opción de filtro por categoría y ordenación
 exports.getPosts = async (req, res) => {
   try {
     const { category, sortBy } = req.query;
     let query = {};
-    let sortCriteria = { createdAt: -1 }; // Default sorting by date
+    let sortCriteria = { createdAt: -1 }; // Ordenar por fecha de forma predeterminada
 
     if (category) {
-      query.category = category; // Make sure category is correctly passed
+      query.category = category;
     }
 
-    if (sortBy === 'rating') {
-      sortCriteria = { averageRating: -1 };
-    } else if (sortBy === 'date') {
+    if (sortBy === 'date') {
       sortCriteria = { createdAt: -1 };
+    } else if (sortBy === 'rating') {
+      sortCriteria = { averageRating: -1 };
     }
 
-    console.log('Query:', query); // Debugging line to check the query
-    console.log('Sort Criteria:', sortCriteria); // Debugging line to check sort criteria
-
-    const posts = await Post.aggregate([
-      {
-        $lookup: {
-          from: 'ratings',
-          localField: '_id',
-          foreignField: 'postId',
-          as: 'ratings'
-        }
-      },
-      {
-        $addFields: {
-          averageRating: {
-            $cond: {
-              if: { $gt: [{ $size: '$ratings' }, 0] },
-              then: { $avg: '$ratings.value' },
-              else: null
-            }
-          }
-        }
-      },
-      {
-        $match: query
-      },
-      {
-        $sort: sortCriteria
-      }
-    ]);
-
+    const posts = await Post.find(query).sort(sortCriteria).populate('author', 'username');
     res.json(posts);
   } catch (error) {
-    console.error('Error en getPosts:', error);
+    console.error('Error en getPosts:', error); // Esto debería mostrar el error específico en los logs
     res.status(500).json({ message: 'Internal server error' });
   }
 };
@@ -110,7 +79,7 @@ exports.getPostById = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id).populate('author', 'username');
     if (!post) {
-      return res.status(404).json({ error: 'Post not found' });
+      return res.status(404).json({ error: 'Post no encontrado' });
     }
     res.json(post);
   } catch (error) {
@@ -123,9 +92,9 @@ exports.deletePost = async (req, res) => {
   try {
     const post = await Post.findByIdAndDelete(req.params.id);
     if (!post) {
-      return res.status(404).json({ error: 'Post not found' });
+      return res.status(404).json({ error: 'Post no encontrado' });
     }
-    res.status(200).json({ message: 'Post deleted successfully' });
+    res.status(200).json({ message: 'Post eliminado con éxito' });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -188,8 +157,7 @@ exports.updatePost = async (req, res) => {
   }
 };
 
-
-// Asegúrate de que el controlador esté correctamente definido y exportado
+// Obtener los posts más valorados
 exports.getTopRatedPosts = async (req, res) => {
   try {
     const posts = await Post.aggregate([
@@ -227,11 +195,12 @@ exports.getTopRatedPosts = async (req, res) => {
       }
     ]);
 
+    // Popula el campo 'author' con el nombre de usuario
+    await Post.populate(posts, { path: 'author', select: 'username' });
+
     res.json(posts);
   } catch (error) {
-    console.error('Error fetching top rated posts:', error);
-    res.status(500).json({ message: 'Error fetching top rated posts' });
+    console.error('Error al obtener los posts más valorados:', error);
+    res.status(500).json({ message: 'Error al obtener los posts más valorados' });
   }
 };
-
-
